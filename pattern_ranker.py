@@ -353,17 +353,22 @@ def evaluation(normal_time_list, fault_inject_list, ns,log_template_miner, limit
             top1 += 1
         all_num += num
 
-    summary_msg = f"\n==========================================\n📊 KẾT QUẢ TỔNG KẾT ({ns} - {fault_number} ca sự cố):\nAIS@1: {top1/fault_number * 100:.2f}%\nAIS@3: {top3/fault_number * 100:.2f}%\nAIS@5: {top5/fault_number * 100:.2f}%\n=========================================="
+    fn = max(1, fault_number)
+    ais1 = top1 / fn * 100 if fault_number > 0 else 0.0
+    ais3 = top3 / fn * 100 if fault_number > 0 else 0.0
+    ais5 = top5 / fn * 100 if fault_number > 0 else 0.0
+
+    summary_msg = f"\n==========================================\n📊 KẾT QUẢ TỔNG KẾT ({ns} - {fault_number} ca sự cố):\nAIS@1: {ais1:.2f}%\nAIS@3: {ais3:.2f}%\nAIS@5: {ais5:.2f}%\n=========================================="
     print(summary_msg, flush=True)
 
     logger.info("%s", top_list)
     logger.info('-------- %s Fault numbuer : %s-------', ns,fault_number)
     logger.info('--------AIS@1 Result-------')
-    logger.info("%f %%" % (top1/fault_number * 100))
+    logger.info("%f %%" % ais1)
     logger.info('--------AIS@3 Result-------')
-    logger.info("%f %%" % (top3/fault_number * 100))
+    logger.info("%f %%" % ais3)
     logger.info('--------AIS@5 Result-------')
-    logger.info("%f %%" % (top5/fault_number * 100))
+    logger.info("%f %%" % ais5)
     # logger.info('--------MAR Result-------')
     # logger.info("%f" % (all_num/fault_number))
 
@@ -658,22 +663,28 @@ def evaluation_pod(normal_time_list, fault_inject_list, ns,log_template_miner, l
             top1 += 1
         all_num += num
 
-    summary_msg = f"\n==========================================\n📊 KẾT QUẢ TỔNG KẾT ({ns} - {fault_number} ca sự cố):\nAS@1: {top1/fault_number * 100:.2f}%\nAS@3: {top3/fault_number * 100:.2f}%\nAS@5: {top5/fault_number * 100:.2f}%\n=========================================="
+    fn = max(1, fault_number)
+    as1 = top1 / fn * 100 if fault_number > 0 else 0.0
+    as3 = top3 / fn * 100 if fault_number > 0 else 0.0
+    as5 = top5 / fn * 100 if fault_number > 0 else 0.0
+
+    summary_msg = f"\n==========================================\n📊 KẾT QUẢ TỔNG KẾT ({ns} - {fault_number} ca sự cố):\nAS@1: {as1:.2f}%\nAS@3: {as3:.2f}%\nAS@5: {as5:.2f}%\n=========================================="
     print(summary_msg, flush=True)
 
     logger.info("%s", top_list)
     logger.info('-------- %s Fault numbuer : %s-------', ns,fault_number)
     logger.info('--------AS@1 Result-------')
-    logger.info("%f %%" % (top1/fault_number * 100))
+    logger.info("%f %%" % as1)
     logger.info('--------AS@3 Result-------')
-    logger.info("%f %%" % (top3/fault_number * 100))
+    logger.info("%f %%" % as3)
     logger.info('--------AS@5 Result-------')
-    logger.info("%f %%" % (top5/fault_number * 100))
+    logger.info("%f %%" % as5)
     # logger.info('--------MAR Result-------')
     # logger.info("%f" % (all_num/fault_number))
 
 
 def evaluation_time(ns="hipster"):
+    construction_data_path = dirname(__file__) + "/construct_data"
     # normal_time = "2022-08-22 03:51"
     # abnormal_time = "2022-08-22 03:52"
     normal_time = "2023-01-29 08:50"
