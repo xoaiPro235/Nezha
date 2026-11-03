@@ -197,13 +197,14 @@ def pattern_ranker(normal_pattern_dict, normal_event_graphs, abnormal_time, ns, 
     return result_list, abnormal_pattern_score
 
 
-def evaluation(normal_time_list, fault_inject_list, ns,log_template_miner):
+def evaluation(normal_time_list, fault_inject_list, ns,log_template_miner, limit=0):
     """
     func evaluation: evaluate nezha's precision in inner-service level
     para:
     - normal_time_list:  list of normal construction time
     - fault_inject_list: list of ground truth
     - ns: namespace of microservice
+    - limit: maximum number of faults to evaluate (0 for all)
     return:
     nezha's precision
     """
@@ -211,7 +212,19 @@ def evaluation(normal_time_list, fault_inject_list, ns,log_template_miner):
     top_list = []
     construction_data_path = dirname(__file__) +  "/construct_data"
 
+    total_faults = 0
+    for p in fault_inject_list:
+        with open(p) as f_count:
+            d_count = json.load(f_count)
+            for h in d_count:
+                total_faults += len(d_count[h])
+    if limit > 0 and limit < total_faults:
+        total_faults = limit
+
+    stop_flag = False
     for i in range(len(fault_inject_list)):
+        if stop_flag:
+            break
         ground_truth_path = fault_inject_list[i]
         normal_time = normal_time_list[i]
        
@@ -228,8 +241,13 @@ def evaluation(normal_time_list, fault_inject_list, ns,log_template_miner):
         root_cause_lit_file.close()
         
         for hour in fault_inject_data:
+            if stop_flag:
+                break
             for fault in fault_inject_data[hour]:
                 fault_number = fault_number + 1
+                progress_msg = f"\n>>> [Tiến độ: {fault_number}/{total_faults}] Phân tích sự cố: {fault['inject_time']} | Pod lỗi: {fault['inject_pod']} ({fault['inject_type']})"
+                print(progress_msg, flush=True)
+                logger.info(progress_msg)
 
                 min = int(fault["inject_time"].split(":")[1]) + 2
 
@@ -318,9 +336,10 @@ def evaluation(normal_time_list, fault_inject_list, ns,log_template_miner):
                                 break
 
                 logger.info("")
+                if limit > 0 and fault_number >= limit:
+                    stop_flag = True
+                    break
 
-
-    logger.info("%s", top_list)
     top5 = 0
     top1 = 0
     top3 = 0
@@ -334,6 +353,10 @@ def evaluation(normal_time_list, fault_inject_list, ns,log_template_miner):
             top1 += 1
         all_num += num
 
+    summary_msg = f"\n==========================================\n📊 KẾT QUẢ TỔNG KẾT ({ns} - {fault_number} ca sự cố):\nAIS@1: {top1/fault_number * 100:.2f}%\nAIS@3: {top3/fault_number * 100:.2f}%\nAIS@5: {top5/fault_number * 100:.2f}%\n=========================================="
+    print(summary_msg, flush=True)
+
+    logger.info("%s", top_list)
     logger.info('-------- %s Fault numbuer : %s-------', ns,fault_number)
     logger.info('--------AIS@1 Result-------')
     logger.info("%f %%" % (top1/fault_number * 100))
@@ -485,13 +508,14 @@ def evaluation_min_score(normal_time_list, fault_inject_list, ns,log_template_mi
         logger.info("%f" % (all_num/fault_number))
 
 
-def evaluation_pod(normal_time_list, fault_inject_list, ns,log_template_miner):
+def evaluation_pod(normal_time_list, fault_inject_list, ns,log_template_miner, limit=0):
     """
     func evaluation: evaluate nezha's precision in pod-service level
     para:
     - normal_time_list:  list of normal construction time
     - fault_inject_list: list of ground truth
     - ns: namespace of microservice
+    - limit: maximum number of faults to evaluate (0 for all)
     return:
     nezha's precision 
     """
@@ -499,7 +523,19 @@ def evaluation_pod(normal_time_list, fault_inject_list, ns,log_template_miner):
     top_list = []
     construction_data_path = dirname(__file__) +  "/construct_data"
 
+    total_faults = 0
+    for p in fault_inject_list:
+        with open(p) as f_count:
+            d_count = json.load(f_count)
+            for h in d_count:
+                total_faults += len(d_count[h])
+    if limit > 0 and limit < total_faults:
+        total_faults = limit
+
+    stop_flag = False
     for i in range(len(fault_inject_list)):
+        if stop_flag:
+            break
         ground_truth_path = fault_inject_list[i]
         normal_time = normal_time_list[i]
 
@@ -516,8 +552,13 @@ def evaluation_pod(normal_time_list, fault_inject_list, ns,log_template_miner):
         root_cause_lit_file.close()
 
         for hour in fault_inject_data:
+            if stop_flag:
+                break
             for fault in fault_inject_data[hour]:
                 fault_number = fault_number + 1
+                progress_msg = f"\n>>> [Tiến độ: {fault_number}/{total_faults}] Phân tích sự cố: {fault['inject_time']} | Pod lỗi: {fault['inject_pod']} ({fault['inject_type']})"
+                print(progress_msg, flush=True)
+                logger.info(progress_msg)
 
                 min = int(fault["inject_time"].split(":")[1]) + 2
 
@@ -600,7 +641,10 @@ def evaluation_pod(normal_time_list, fault_inject_list, ns,log_template_miner):
                         logger.info("source :%s, target: %s, score: %s, deepth: %s, pod %s" % (from_id_to_template(int(result_list[i]["events"].split("_")[
                                     0]),log_template_miner), from_id_to_template(int(result_list[i]["events"].split("_")[1]),log_template_miner), result_list[i]["score"], result_list[i]["deepth"], result_list[i]["pod"]))
                 logger.info("")
-    logger.info("%s", top_list)
+                if limit > 0 and fault_number >= limit:
+                    stop_flag = True
+                    break
+
     top5 = 0
     top1 = 0
     top3 = 0
@@ -613,6 +657,11 @@ def evaluation_pod(normal_time_list, fault_inject_list, ns,log_template_miner):
         if num == 1:
             top1 += 1
         all_num += num
+
+    summary_msg = f"\n==========================================\n📊 KẾT QUẢ TỔNG KẾT ({ns} - {fault_number} ca sự cố):\nAS@1: {top1/fault_number * 100:.2f}%\nAS@3: {top3/fault_number * 100:.2f}%\nAS@5: {top5/fault_number * 100:.2f}%\n=========================================="
+    print(summary_msg, flush=True)
+
+    logger.info("%s", top_list)
     logger.info('-------- %s Fault numbuer : %s-------', ns,fault_number)
     logger.info('--------AS@1 Result-------')
     logger.info("%f %%" % (top1/fault_number * 100))

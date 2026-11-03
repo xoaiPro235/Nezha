@@ -9,7 +9,7 @@ import logging
 from yaml import FlowMappingEndToken
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import statistics
 import numpy as np
 
@@ -106,15 +106,15 @@ def get_netwrok_metric(trace_file, pod_name):
         pod_spans = pod_reader.loc[[pod_name], [
             'SpanID', 'ParentID', 'EndTimeUnixNano']]
     except:
-        service = pod_name.rsplit('-', 1)[0]
-        service = service.rsplit('-', 1)[0]
+        try:
+            service = pod_name.rsplit('-', 1)[0]
+            service = service.rsplit('-', 1)[0]
 
-        csv_file = dirname(__file__) +  "/metric_threshold/" + service + ".csv"
-        pod_reader = pd.read_csv(csv_file, usecols=['NetworkP90(ms)'])
-        # print("pod", pod_name, " not found in trace, return default ",
-        #       float(pod_reader.iloc[0]))
-
-        return float(pod_reader.iloc[0]), 0
+            csv_file = dirname(__file__) +  "/metric_threshold/" + service + ".csv"
+            pod_reader = pd.read_csv(csv_file, usecols=['NetworkP90(ms)'])
+            return float(pod_reader.iloc[0, 0]), 0
+        except Exception:
+            return 10.0, 0
 
     if len(pod_spans['SpanID']) > 0:
         # process span independentlt and order by timestamp
